@@ -7,15 +7,15 @@
 - MacOS : coming soon...
 
 # Step-by-step help
-- Please join my Discord channel : https://discord.com/invite/837cCXPd48
-- DM our Head of IT for support
+1. Please join my Discord channel : https://discord.com/invite/837cCXPd48
+2. DM our Head of IT for support
 
 # Upcoming new features
 - [x] Create a QR Code Bot
 - [x] Create a payout script : https://github.com/ZracheSs-xyZ/PayoutScript-xyZ
-- [ ] So much more...
+- [ ] So much more... If you have some nice idea, please DM me!
 
-# bug to fix
+# Bug to fix
 - Please tell me if you experience any bugs...
 
 # Donations
