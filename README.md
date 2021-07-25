@@ -11,7 +11,7 @@
 2. DM our Head of IT for support
 
 # Upcoming new features
-- [x] Create a QR Code Bot
+- [x] Create a QR Code Bot : https://github.com/ZracheSs-xyZ/QrCodeBot-xyZ
 - [x] Create a payout script : https://github.com/ZracheSs-xyZ/PayoutScript-xyZ
 - [ ] So much more... If you have some nice idea, please DM me!
 
