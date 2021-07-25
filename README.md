@@ -22,6 +22,8 @@
 With your donation, I will be able to keep working on this project and add new features. 
 Thank you!
 
+* There’s a built-in donation of 1% that you can easily modify by changing the value of FEE_PAYOUT_ADDRESS from 0.01 to 0.
+
 * Ronin Wallet Address: ronin:a04d88fbd1cf579a83741ad6cd51748a4e2e2b6a
 * Ethereum Wallet Address: 0x3C133521589daFa7213E5c98C74464a9577bEE01
 
