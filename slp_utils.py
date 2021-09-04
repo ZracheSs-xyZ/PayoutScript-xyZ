@@ -19,7 +19,7 @@ def get_claimed_slp(address):
     return int(slp_contract_2.functions.balanceOf(address).call())
 
 def get_unclaimed_slp(address):
-    for i in range(10):
+    for i in range(50):
         response = requests.get(f"https://game-api.skymavis.com/game-api/clients/{address}/items/1", headers=headers, data="")
         if (response.status_code == 200): break
         time.sleep(1)
