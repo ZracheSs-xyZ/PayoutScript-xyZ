@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from eth_account.messages import encode_defunct
 from web3 import Web3
-import json, requests
+import json, requests, time
 
 web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc'))
 web3_2 = Web3(Web3.HTTPProvider('https://api.roninchain.com/rpc'))
@@ -19,7 +19,10 @@ def get_claimed_slp(address):
     return int(slp_contract_2.functions.balanceOf(address).call())
 
 def get_unclaimed_slp(address):
-    response = requests.get(f"https://game-api.skymavis.com/game-api/clients/{address}/items/1", headers=headers, data="")
+    for i in range(10):
+        response = requests.get(f"https://game-api.skymavis.com/game-api/clients/{address}/items/1", headers=headers, data="")
+        if (response.status_code == 200): break
+        time.sleep(1)
     if (response.status_code != 200):
         print(response.text)
     assert(response.status_code == 200)
@@ -92,7 +95,7 @@ def get_jwt_access_token(address, private_key):
         "query": "mutation CreateAccessTokenWithSignature($input: SignatureInput!) {    createAccessTokenWithSignature(input: $input) {      newAccount      result      accessToken      __typename    }  }  "
     }
 
-    response = requests.post("https://axieinfinity.com/graphql-server-v2/graphql", headers=headers, json=payload)
+    response = requests.post("https://graphql-gateway.axieinfinity.com/graphql", headers=headers, json=payload)
     if (response.status_code != 200):
         print(response.text)
     assert(response.status_code == 200)
@@ -105,7 +108,7 @@ def create_random_message():
         "query": "mutation CreateRandomMessage {    createRandomMessage  }  "
     }
 
-    response = requests.post("https://axieinfinity.com/graphql-server-v2/graphql", headers=headers, json=payload)
+    response = requests.post("https://graphql-gateway.axieinfinity.com/graphql", headers=headers, json=payload)
     if (response.status_code != 200):
         print(response.text)
     assert(response.status_code == 200)
