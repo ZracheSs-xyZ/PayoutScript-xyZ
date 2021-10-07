@@ -1,5 +1,6 @@
 from collections import namedtuple
 from datetime import datetime
+import asyncio
 from web3 import Web3
 import json, math, os, sys, time
 
@@ -94,15 +95,36 @@ if (new_line_needed):
 if (len(slp_claims) > 0):
   log("Would you like to claim SLP?", end=" ")
 
+async def claim_slp(slp_claim, nonces):
+  log(f"   Claiming {slp_claim.slp_unclaimed_balance} SLP for '{slp_claim.name}'...")
+  claim_successful = await slp_utils.execute_slp_claim(slp_claim, nonces)
+  if claim_successful:
+      log(f"   SLP Claimed for account({slp_claim.address.replace('0x', 'ronin:')}!")
+  else:
+      log(f"   SLP Claim for account ({slp_claim.address.replace('0x', 'ronin:')}) failed")
+  return {
+    "slp_claim": slp_claim,
+    "is_successful": claim_successful
+  }
+
 while (len(slp_claims) > 0):
   if (input() == "y"):
-    for slp_claim in slp_claims:
-      log(f"   Claiming {slp_claim.slp_unclaimed_balance} SLP for '{slp_claim.name}'...", end="")
-      slp_utils.execute_slp_claim(slp_claim, nonces)
-      time.sleep(0.250)
-      log("DONE")
-    log("Waiting 30 seconds", end="")
-    wait(30)
+    loop = asyncio.get_event_loop()
+    results = loop.run_until_complete(asyncio.gather(*[claim_slp(slp_claim, nonces) for slp_claim in slp_claims]))
+    print(f"Results {results}")
+    # for slp_claim in slp_claims:
+    #   log(f"   Claiming {slp_claim.slp_unclaimed_balance} SLP for '{slp_claim.name}'...", end="")
+    #   slp_utils.execute_slp_claim(slp_claim, nonces)
+    #   time.sleep(0.250)
+    log("DONE")
+    # log("Waiting 30 seconds", end="")
+    # wait(30)
+
+    failed_claims = []
+    for result in results:
+      print(f"Results: {result}")
+      if (result["is_successful"] == False):
+        failed_claims.append(result.slp_claim)
 
     completed_claims = []
     for slp_claim in slp_claims:
@@ -111,15 +133,18 @@ while (len(slp_claims) > 0):
         print(slp_total_balance)
         print(slp_claim.slp_claimed_balance)
         print(slp_claim.slp_unclaimed_balance)
-        if (slp_total_balance >= slp_claim.slp_claimed_balance + slp_claim.slp_unclaimed_balance):
-          completed_claims.append(slp_claim)
-  
-    for completed_claim in completed_claims:
-      slp_claims.remove(completed_claim)
 
-    if (len(slp_claims) > 0):
+        # Determining if claim was completed based on total balance being greater than claimed balance + unclaimed balance (seems like there is a better way)
+        # if (slp_total_balance >= slp_claim.slp_claimed_balance + slp_claim.slp_unclaimed_balance):
+        #   completed_claims.append(slp_claim)
+  
+    # for completed_claim in completed_claims:
+    #   slp_claims.remove(completed_claim)
+
+    # if (len(slp_claims) > 0):
+    if (len(failed_claims) > 0):
       log("The following claims didn't complete successfully:")
-      for slp_claim in slp_claims:
+      for slp_claim in failed_claims:
         log(f"  - Account '{slp_claim.name}' has {slp_claim.slp_unclaimed_balance} unclaimed SLP.")
       log("Would you like to retry claim process? ", end="")
     else:

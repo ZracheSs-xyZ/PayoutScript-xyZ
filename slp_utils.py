@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from eth_account.messages import encode_defunct
-from web3 import Web3
+from web3 import Web3, exceptions
 import json, requests, time
+import asyncio
 
 web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc'))
 web3_2 = Web3(Web3.HTTPProvider('https://api.roninchain.com/rpc'))
@@ -36,7 +37,23 @@ def get_unclaimed_slp(address):
 
     return total
 
-def execute_slp_claim(claim, nonces):
+async def wait_for_transaction_to_complete(hash, address, name, nonce):
+    maximum_retries = 12 # Give each claim 1 minute to complete
+    for _ in range(maximum_retries):
+        try:
+            recepit = web3.eth.get_transaction_receipt(hash)
+            if recepit["status"] == 1:
+                success = True
+            else:
+                success = False
+            break
+        except exceptions.TransactionNotFound:
+            print(f"Waiting for {name}'s ({address.replace('0x', 'ronin:')}) claim to finish. (Nonce:{nonce}) (Hash: {hash})...")
+            # Pause between requests
+            await asyncio.sleep(5)
+    return success
+
+async def execute_slp_claim(claim, nonces):
     if (claim.state["signature"] == None):
         access_token = get_jwt_access_token(claim.address, claim.private_key)
         custom_headers = headers.copy()
@@ -57,7 +74,9 @@ def execute_slp_claim(claim, nonces):
 
     nonces[claim.address] += 1
 
-    return web3.toHex(web3.keccak(signed_txn.rawTransaction)) # Returns transaction hash.
+    hash = web3.toHex(web3.keccak(signed_txn.rawTransaction))
+    transaction_successful = await wait_for_transaction_to_complete(hash, claim.address, claim.name, nonce)
+    return transaction_successful
 
 def transfer_slp(transaction, private_key, nonce):
     transfer_txn = slp_contract.functions.transfer(
