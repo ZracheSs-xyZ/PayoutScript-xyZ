@@ -37,8 +37,8 @@ def get_unclaimed_slp(address):
 
     return total
 
-async def wait_for_transaction_to_complete(hash, address, name, nonce):
-    maximum_retries = 12 # Give each claim 1 minute to complete
+async def wait_for_transaction_to_complete(hash, address, name):
+    maximum_retries = 12 # Give each transaction 1 minute to complete
     for _ in range(maximum_retries):
         try:
             recepit = web3.eth.get_transaction_receipt(hash)
@@ -48,7 +48,7 @@ async def wait_for_transaction_to_complete(hash, address, name, nonce):
                 success = False
             break
         except exceptions.TransactionNotFound:
-            print(f"Waiting for {name}'s ({address.replace('0x', 'ronin:')}) claim to finish. (Nonce:{nonce}) (Hash: {hash})...")
+            print(f"   Waiting for {name}'s ({address.replace('0x', 'ronin:')}) claim to finish.")
             # Pause between requests
             await asyncio.sleep(5)
     return success
@@ -75,7 +75,7 @@ async def execute_slp_claim(claim, nonces):
     nonces[claim.address] += 1
 
     hash = web3.toHex(web3.keccak(signed_txn.rawTransaction))
-    transaction_successful = await wait_for_transaction_to_complete(hash, claim.address, claim.name, nonce)
+    transaction_successful = await wait_for_transaction_to_complete(hash, claim.address, claim.name)
     return transaction_successful
 
 def transfer_slp(transaction, private_key, nonce):
