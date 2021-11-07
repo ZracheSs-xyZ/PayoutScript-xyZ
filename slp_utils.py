@@ -38,14 +38,13 @@ def get_unclaimed_slp(address):
     return total
 
 async def wait_for_transaction_to_complete(hash, address, name):
-    maximum_retries = 12 # Give each transaction 1 minute to complete
+    maximum_retries = 24 # Give each transaction 2 minutes to complete
+    success = False
     for _ in range(maximum_retries):
         try:
-            recepit = web3.eth.get_transaction_receipt(hash)
-            if recepit["status"] == 1:
+            receipt = web3.eth.get_transaction_receipt(hash)
+            if receipt["status"] == 1:
                 success = True
-            else:
-                success = False
             break
         except exceptions.TransactionNotFound:
             print(f"   Waiting for {name}'s ({address.replace('0x', 'ronin:')}) claim to finish.")
