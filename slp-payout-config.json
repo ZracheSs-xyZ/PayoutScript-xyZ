@@ -14,7 +14,8 @@
             "PrivateKey": "0x<private key here>",
             "AccountAddress": "ronin:<from_address>",
             "ScholarPayoutAddress": "ronin:<scholar_address>",
-            "ScholarPayoutPercentage": 0.5
+            "ScholarPayoutPercentage": 0.5,
+            "ScholarPayoutPercentage_description": "Value between 0 and 1. Represents the percentage the scholar will receive. The rest is sent to the academy."
         }
     ]
 }
