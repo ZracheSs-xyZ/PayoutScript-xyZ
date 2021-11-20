@@ -3,8 +3,14 @@ from eth_account.messages import encode_defunct
 from web3 import Web3
 import json, requests
 
-web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc'))
-web3_2 = Web3(Web3.HTTPProvider('https://api.roninchain.com/rpc'))
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36"
+RONIN_RPC_FREE = "https://proxy.roninchain.com/free-gas-rpc"
+RONIN_RPC = "https://api.roninchain.com/rpc"
+
+web3 = Web3(Web3.HTTPProvider(RONIN_RPC_FREE, request_kwargs={"headers": {
+            "content-type": "application/json", "user-agent": USER_AGENT}}))
+web3_2 = Web3(Web3.HTTPProvider(RONIN_RPC, request_kwargs={"headers": {
+    "content-type": "application/json", "user-agent": USER_AGENT}}))
 
 with open('slp_abi.json') as f:
     slp_abi = json.load(f)
