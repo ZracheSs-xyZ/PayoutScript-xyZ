@@ -34,7 +34,8 @@ def wait(seconds):
     log(".", end="")
   log()
 
-web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc'))
+web3 = Web3(Web3.HTTPProvider(slp_utils.RONIN_RPC_FREE, request_kwargs={"headers": {
+            "content-type": "application/json", "user-agent": slp_utils.USER_AGENT}}))
 
 today = datetime.now()
 log_path = f"logs/logs-{today.year}-{today.month:02}-{today.day:02}.txt"
