@@ -3,17 +3,18 @@ from eth_account.messages import encode_defunct
 from web3 import Web3
 import json, requests
 
-web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc'))
-web3_2 = Web3(Web3.HTTPProvider('https://api.roninchain.com/rpc'))
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36"
+headers = {
+  "Content-Type": "application/json",
+  "User-Agent": USER_AGENT }
+
+web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc', request_kwargs={ "headers": headers }))
+web3_2 = Web3(Web3.HTTPProvider('https://api.roninchain.com/rpc', request_kwargs={ "headers": headers }))
 
 with open('slp_abi.json') as f:
     slp_abi = json.load(f)
 slp_contract = web3.eth.contract(address=Web3.toChecksumAddress("0xa8754b9fa15fc18bb59458815510e40a12cd2014"), abi=slp_abi)
 slp_contract_2 = web3_2.eth.contract(address=Web3.toChecksumAddress("0xa8754b9fa15fc18bb59458815510e40a12cd2014"), abi=slp_abi)
-
-headers = {
-  "Content-Type": "application/json",
-  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36" }
 
 def get_claimed_slp(address):
   return int(slp_contract_2.functions.balanceOf(address).call())

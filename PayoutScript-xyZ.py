@@ -34,8 +34,6 @@ def wait(seconds):
     log(".", end="")
   log()
 
-web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc'))
-
 today = datetime.now()
 log_path = f"logs/logs-{today.year}-{today.month:02}-{today.day:02}.txt"
 
@@ -68,7 +66,7 @@ for scholar in accounts["Scholars"]:
 
   slp_unclaimed_balance = slp_utils.get_unclaimed_slp(account_address)
 
-  nonce = nonces[account_address] = web3.eth.get_transaction_count(account_address)
+  nonce = nonces[account_address] = slp_utils.web3.eth.get_transaction_count(account_address)
 
   if (slp_unclaimed_balance > 0):
     if (new_line_needed):
@@ -243,7 +241,7 @@ while (len(payouts) > 0):
 
   for payout in payouts:
     expected_nonce = payout.nonce + 3
-    actual_nonce = nonces[payout.account_address] = web3.eth.get_transaction_count(payout.account_address)
+    actual_nonce = nonces[payout.account_address] = slp_utils.web3.eth.get_transaction_count(payout.account_address)
 
     if (actual_nonce == expected_nonce):
       completed_payouts.append(payout)
