@@ -3,8 +3,69 @@
 
 
 # Setup
+
+## Previous version
 - Windows : https://medium.com/@ZracheSs-xyZ/payoutscript-xyz-step-by-step-installation-instructions-239a9fd9c424
 - MacOS : coming soon...
+
+## Using encryption for sensitive data
+The above link is still valid, however
+If anyone can set their hands on your private keys, they can do whatever they want with your funds / axies.
+Please prefer the encryption method describe below
+For that you will need the cryptography package:
+
+ ```bash
+pip install -r requirements.txt
+ ```
+
+You can list the config possibility with the command:
+
+ ```bash
+python config.py --help
+ ```
+
+### New configuration
+
+If you want to create a new configuration, juste launch the command:
+
+ ```bash
+python config.py --create
+ ```
+
+### To encrypt an existing configuration file
+
+If you have already json file with the config information, you can convert it to an encrypted config.
+You can delete your json file after that.
+
+ ```bash
+python config.py --convert_clear file_path <file_path>
+ ```
+
+### To add or delete scholars from your config
+
+ ```bash
+python config.py --add
+ ```
+
+ ```bash
+python config.py --delete
+ ```
+
+### To display the current state of the config
+
+ ```bash
+python config.py --display
+ ```
+
+### Launching payouts
+
+To launch the payouts using the encrypted config, no args should be provided:
+
+ ```bash
+python PayoutScript-xyZ.py
+ ```
+
+---
 
 # Step-by-step help
 1. Please join my Discord channel : https://discord.com/invite/837cCXPd48
