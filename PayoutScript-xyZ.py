@@ -220,17 +220,16 @@ while (len(payouts) > 0):
       log(f"├─ Academy payout skipped because it has succeeded already.")
 
     if nonces[payout.account_address] <= (payout.nonce + 2):
-      if payout.fee_transaction.amount > 0:
-        log(f"└─ Fee payout: sending {payout.fee_transaction.amount} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}...", end="")
-        try:
-          hash = slp_utils.transfer_slp(payout.fee_transaction, payout.private_key, payout.nonce + 2)
-          log("DONE")
-          log(f"│  Hash: {hash}")
-          log(f"│  Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
-        except Exception as e:
-          log(f"WARNING: " + str(e))
-        time.sleep(0.250)
-        log()
+      log(f"└─ Fee payout: sending {payout.fee_transaction.amount} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}...", end="")
+      try:
+        hash = slp_utils.transfer_slp(payout.fee_transaction, payout.private_key, payout.nonce + 2)
+        log("DONE")
+        log(f"│  Hash: {hash}")
+        log(f"│  Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
+      except Exception as e:
+        log(f"WARNING: " + str(e))
+      time.sleep(0.250)
+      log()
     else:
       log(f"└─ Fee payout skipped because it has succeeded already.")
       assert(False) # We should never get here because it means the full payout has succeeded and no need for a retry.
