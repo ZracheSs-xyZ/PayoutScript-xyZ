@@ -11,7 +11,7 @@ FEE_PAYOUT_ADDRESS = Web3.toChecksumAddress("0xa0caa7803205026ec08818664c4211aff
 
 # Data types
 Transaction = namedtuple("Transaction", "from_address to_address amount")
-Payout = namedtuple("Payout", "name private_key nonce slp_balance scholar_transaction academy_transaction fee_transaction")
+Payout = namedtuple("Payout", "name private_key slp_balance account_address nonce scholar_transaction academy_transaction fee_transaction")
 SlpClaim = namedtuple("SlpClaim", "name address private_key slp_claimed_balance slp_unclaimed_balance state")
 
 def parseRoninAddress(address):
@@ -76,17 +76,17 @@ for scholar in accounts["Scholars"]:
 
   slp_unclaimed_balance = slp_utils.get_unclaimed_slp(account_address)
 
-  nonce = nonces[account_address] = web3.eth.get_transaction_count(account_address)
+  nonce = nonces[account_address] = slp_utils.web3.eth.get_transaction_count(account_address)
 
   if (slp_unclaimed_balance > 0):
     if (new_line_needed):
       new_line_needed = False
       log()
     log(f"Account '{scholarName}' (nonce: {nonce}) has {slp_unclaimed_balance} unclaimed SLP.")
-    
+
     slp_claims.append(SlpClaim(
       name = scholarName,
-      address = account_address, 
+      address = account_address,
       private_key = scholar["PrivateKey"],
       slp_claimed_balance = slp_utils.get_claimed_slp(account_address),
       slp_unclaimed_balance = slp_unclaimed_balance,
@@ -106,7 +106,10 @@ while (len(slp_claims) > 0):
   if ask_yesno():
     for slp_claim in slp_claims:
       log(f"   Claiming {slp_claim.slp_unclaimed_balance} SLP for '{slp_claim.name}'...", end="")
-      slp_utils.execute_slp_claim(slp_claim, nonces)
+      try:
+        slp_utils.execute_slp_claim(slp_claim, nonces[slp_claim.address])
+      except Exception as e:
+        log(f"   ERROR slp_utils.execute_slp_claim: " + str(e))
       time.sleep(0.250)
       log("DONE")
     log("Waiting 30 seconds", end="")
@@ -115,15 +118,17 @@ while (len(slp_claims) > 0):
     completed_claims = []
     for slp_claim in slp_claims:
       if (slp_claim.state["signature"] != None):
-        slp_total_balance = slp_utils.get_claimed_slp(account_address)
-        print(slp_total_balance)
-        print(slp_claim.slp_claimed_balance)
-        print(slp_claim.slp_unclaimed_balance)
+        try:
+          slp_total_balance = slp_utils.get_claimed_slp(slp_claim.address)
+        except Exception as e:
+          log(f"   ERROR slp_utils.get_claimed_slp: " + str(e))
+
         if (slp_total_balance >= slp_claim.slp_claimed_balance + slp_claim.slp_unclaimed_balance):
           completed_claims.append(slp_claim)
-  
+
     for completed_claim in completed_claims:
       slp_claims.remove(completed_claim)
+      nonces[completed_claim.address] += 1
 
     if (len(slp_claims) > 0):
       log("The following claims didn't complete successfully:")
@@ -151,7 +156,7 @@ for scholar in accounts["Scholars"]:
   if (slp_balance == 0):
     log(f"Skipping account '{scholarName}' ({formatRoninAddress(account_address)}) because SLP balance is zero.")
     continue
-  
+
   scholar_payout_percentage = scholar["ScholarPayoutPercentage"]
   assert(scholar_payout_percentage >= 0 and scholar_payout_percentage <= 1)
 
@@ -159,15 +164,16 @@ for scholar in accounts["Scholars"]:
   slp_balance_minus_fees = slp_balance - fee_payout_amount
   scholar_payout_amount = math.ceil(slp_balance_minus_fees * scholar_payout_percentage)
   academy_payout_amount = slp_balance_minus_fees - scholar_payout_amount
-  
+
   assert(scholar_payout_amount >= 0)
   assert(academy_payout_amount >= 0)
   assert(slp_balance == scholar_payout_amount + academy_payout_amount + fee_payout_amount)
-  
+
   payouts.append(Payout(
     name = scholarName,
     private_key = scholar["PrivateKey"],
     slp_balance = slp_balance,
+    account_address = account_address,
     nonce = nonces[account_address],
     scholar_transaction = Transaction(from_address = account_address, to_address = scholar_payout_address, amount = scholar_payout_amount),
     academy_transaction = Transaction(from_address = account_address, to_address = academy_payout_address, amount = academy_payout_amount),
@@ -188,31 +194,78 @@ for payout in payouts:
   log(f"└─ Fee           : send {payout.fee_transaction.amount:5} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}")
   log()
 
-log("Would you like to execute transactions (y/n) ?", end=" ")
-if not ask_yesno():
-  log("No transaction was executed. Program will now stop.")
-  exit()
+log("Would you like to execute payouts (y/n) ?", end=" ")
 
-# Execute transactions.
+# Execute payouts
+while (len(payouts) > 0):
+  if not ask_yesno():
+    break
+
+  log("Executing payouts...")
+
+  for payout in payouts:
+    log(f"Executing payout for '{payout.name}'")
+    if (nonces[payout.account_address] == payout.nonce):
+      log(f"├─ Scholar payout: sending {payout.scholar_transaction.amount} SLP from {formatRoninAddress(payout.scholar_transaction.from_address)} to {formatRoninAddress(payout.scholar_transaction.to_address)}...", end="")
+      try:
+        hash = slp_utils.transfer_slp(payout.scholar_transaction, payout.private_key, payout.nonce)
+        log("DONE")
+        log(f"│  Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
+      except Exception as e:
+        log(f"WARNING: " + str(e))
+      time.sleep(0.250)
+    else:
+      log(f"├─ Scholar payout skipped because it has succeeded already.")
+
+    if (nonces[payout.account_address] <= payout.nonce + 1):
+      log(f"├─ Academy payout: sending {payout.academy_transaction.amount} SLP from {formatRoninAddress(payout.academy_transaction.from_address)} to {formatRoninAddress(payout.academy_transaction.to_address)}...", end="")
+      try:
+        hash = slp_utils.transfer_slp(payout.academy_transaction, payout.private_key, payout.nonce + 1)
+        log("DONE")
+        log(f"│  Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
+      except Exception as e:
+        log(f"WARNING: " + str(e))
+      time.sleep(0.250)
+    else:
+      log(f"├─ Academy payout skipped because it has succeeded already.")
+
+    if (nonces[payout.account_address] <= payout.nonce + 2):
+      log(f"└─ Fee payout: sending {payout.fee_transaction.amount} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}...", end="")
+      try:
+        hash = slp_utils.transfer_slp(payout.fee_transaction, payout.private_key, payout.nonce + 2)
+        log("DONE")
+        log(f"   Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
+      except Exception as e:
+        log(f"WARNING: " + str(e))
+      time.sleep(0.250)
+      log()
+    else:
+      log(f"└─ Fee payout skipped because it has succeeded already.")
+      assert(False) # We should never get here because it means the full payout has succeeded and no need for a retry.
+
+  log("Detecting payouts that failed...")
+  log("Waiting 5 minutes to give time to new blocks to be mined...", end="")
+  wait(60 * 5)
+
+  completed_payouts = []
+
+  for payout in payouts:
+    expected_nonce = payout.nonce + 3
+    actual_nonce = nonces[payout.account_address] = slp_utils.web3.eth.get_transaction_count(payout.account_address)
+
+    if (actual_nonce == expected_nonce):
+      completed_payouts.append(payout)
+    else:
+      completed_steps = 3 - (expected_nonce - actual_nonce)
+      log(f"Payout for '{payout.name}' didn't succeeded completely. Only {completed_steps} out of 3 succeeded. Expected nonce: {expected_nonce}. Actual nonce: {actual_nonce}")
+
+  for completed_payout in completed_payouts:
+    payouts.remove(completed_payout)
+
+  if (len(payouts) != 0):
+    log("Would you like to retry payout process? ", end="")
+  else:
+    log("All payouts completed successfully!")
+
 log()
-log("Executing transactions...")
-for payout in payouts:
-  log(f"Executing payout for '{payout.name}'")
-  log(f"├─ Scholar payout: sending {payout.scholar_transaction.amount} SLP from {formatRoninAddress(payout.scholar_transaction.from_address)} to {formatRoninAddress(payout.scholar_transaction.to_address)}...", end="")
-  hash = slp_utils.transfer_slp(payout.scholar_transaction, payout.private_key, payout.nonce)
-  time.sleep(0.250)
-  log("DONE")
-  log(f"│  Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
-
-  log(f"├─ Academy payout: sending {payout.academy_transaction.amount} SLP from {formatRoninAddress(payout.academy_transaction.from_address)} to {formatRoninAddress(payout.academy_transaction.to_address)}...", end="")
-  hash = slp_utils.transfer_slp(payout.academy_transaction, payout.private_key, payout.nonce + 1)
-  time.sleep(0.250)
-  log("DONE")
-  log(f"│  Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
-
-  log(f"└─ Fee payout: sending {payout.fee_transaction.amount} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}...", end="")
-  hash = slp_utils.transfer_slp(payout.fee_transaction, payout.private_key, payout.nonce + 2)
-  time.sleep(0.250)
-  log("DONE")
-  log(f"   Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
-  log()
+log("Program completed. Have a nice day!")
