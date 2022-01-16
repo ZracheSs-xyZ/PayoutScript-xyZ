@@ -43,6 +43,7 @@ def ask_yesno() -> bool:
       return False
 
 today = datetime.now()
+
 log_path = f"logs/logs-{today.year}-{today.month:02}-{today.day:02}.txt"
 
 if not os.path.exists(os.path.dirname(log_path)):
@@ -73,7 +74,6 @@ for scholar in accounts["Scholars"]:
   account_address = parseRoninAddress(scholar["AccountAddress"])
 
   slp_unclaimed_balance = slp_utils.get_unclaimed_slp(account_address)
-
   nonce = nonces[account_address] = slp_utils.web3.eth.get_transaction_count(account_address)
 
   if (slp_unclaimed_balance > 0):
@@ -81,7 +81,7 @@ for scholar in accounts["Scholars"]:
       new_line_needed = False
       log()
     log(f"Account '{scholarName}' (nonce: {nonce}) has {slp_unclaimed_balance} unclaimed SLP.")
-
+    
     slp_claims.append(SlpClaim(
       name = scholarName,
       address = account_address,
@@ -123,7 +123,7 @@ while (len(slp_claims) > 0):
 
         if (slp_total_balance >= slp_claim.slp_claimed_balance + slp_claim.slp_unclaimed_balance):
           completed_claims.append(slp_claim)
-
+    
     for completed_claim in completed_claims:
       slp_claims.remove(completed_claim)
       nonces[completed_claim.address] += 1
@@ -154,7 +154,7 @@ for scholar in accounts["Scholars"]:
   if (slp_balance == 0):
     log(f"Skipping account '{scholarName}' ({formatRoninAddress(account_address)}) because SLP balance is zero.")
     continue
-
+    
   scholar_payout_percentage = scholar["ScholarPayoutPercentage"]
   assert(scholar_payout_percentage >= 0 and scholar_payout_percentage <= 1)
 
@@ -166,7 +166,7 @@ for scholar in accounts["Scholars"]:
   assert(scholar_payout_amount >= 0)
   assert(academy_payout_amount >= 0)
   assert(slp_balance == scholar_payout_amount + academy_payout_amount + fee_payout_amount)
-
+  
   payouts.append(Payout(
     name = scholarName,
     private_key = scholar["PrivateKey"],
@@ -259,7 +259,7 @@ while (len(payouts) > 0):
 
   for completed_payout in completed_payouts:
     payouts.remove(completed_payout)
-
+  
   if (len(payouts) != 0):
     log("Would you like to retry payout process? ", end="")
   else:
