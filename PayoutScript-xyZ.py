@@ -42,8 +42,6 @@ def ask_yesno() -> bool:
     elif input_str in ('n', 'no'):
       return False
 
-web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc'))
-
 today = datetime.now()
 log_path = f"logs/logs-{today.year}-{today.month:02}-{today.day:02}.txt"
 
