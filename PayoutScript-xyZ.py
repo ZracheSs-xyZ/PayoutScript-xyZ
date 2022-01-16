@@ -74,6 +74,7 @@ for scholar in accounts["Scholars"]:
   account_address = parseRoninAddress(scholar["AccountAddress"])
 
   slp_unclaimed_balance = slp_utils.get_unclaimed_slp(account_address)
+  
   nonce = nonces[account_address] = slp_utils.web3.eth.get_transaction_count(account_address)
 
   if (slp_unclaimed_balance > 0):
@@ -84,7 +85,7 @@ for scholar in accounts["Scholars"]:
     
     slp_claims.append(SlpClaim(
       name = scholarName,
-      address = account_address,
+      address = account_address, 
       private_key = scholar["PrivateKey"],
       slp_claimed_balance = slp_utils.get_claimed_slp(account_address),
       slp_unclaimed_balance = slp_unclaimed_balance,
@@ -123,7 +124,7 @@ while (len(slp_claims) > 0):
 
         if (slp_total_balance >= slp_claim.slp_claimed_balance + slp_claim.slp_unclaimed_balance):
           completed_claims.append(slp_claim)
-    
+
     for completed_claim in completed_claims:
       slp_claims.remove(completed_claim)
       nonces[completed_claim.address] += 1
@@ -162,7 +163,7 @@ for scholar in accounts["Scholars"]:
   slp_balance_minus_fees = slp_balance - fee_payout_amount
   scholar_payout_amount = math.ceil(slp_balance_minus_fees * scholar_payout_percentage)
   academy_payout_amount = slp_balance_minus_fees - scholar_payout_amount
-
+  
   assert(scholar_payout_amount >= 0)
   assert(academy_payout_amount >= 0)
   assert(slp_balance == scholar_payout_amount + academy_payout_amount + fee_payout_amount)
