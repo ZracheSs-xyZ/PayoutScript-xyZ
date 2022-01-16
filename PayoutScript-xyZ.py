@@ -34,6 +34,14 @@ def wait(seconds):
     log(".", end="")
   log()
 
+def ask_yesno() -> bool:
+  while True:
+    input_str = input().lower()
+    if input_str in ('y', 'yes'):
+      return True
+    elif input_str in ('n', 'no'):
+      return False
+
 web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc'))
 
 today = datetime.now()
@@ -95,7 +103,7 @@ if (len(slp_claims) > 0):
   log("Would you like to claim SLP?", end=" ")
 
 while (len(slp_claims) > 0):
-  if (input() == "y"):
+  if ask_yesno():
     for slp_claim in slp_claims:
       log(f"   Claiming {slp_claim.slp_unclaimed_balance} SLP for '{slp_claim.name}'...", end="")
       slp_utils.execute_slp_claim(slp_claim, nonces)
@@ -181,7 +189,7 @@ for payout in payouts:
   log()
 
 log("Would you like to execute transactions (y/n) ?", end=" ")
-if (input() != "y"):
+if not ask_yesno():
   log("No transaction was executed. Program will now stop.")
   exit()
 
