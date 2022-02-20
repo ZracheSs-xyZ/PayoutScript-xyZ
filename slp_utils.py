@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from eth_account.messages import encode_defunct
 from web3 import Web3
-import json, requests
+import json, requests, time
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36"
 headers = {
@@ -20,7 +20,13 @@ def get_claimed_slp(address):
   return int(slp_contract_2.functions.balanceOf(address).call())
 
 def get_unclaimed_slp(address):
-  response = requests.get(f"https://game-api.skymavis.com/game-api/clients/{address}/items/1", headers=headers, data="")
+  for _ in range(3):
+    response = requests.get(f"https://game-api.skymavis.com/game-api/clients/{address}/items/1", headers=headers, data="")
+    if (response.status_code == 200):
+      break
+    else:
+      time.sleep(1)
+
   if (response.status_code != 200):
     print(response.text)
   assert(response.status_code == 200)
