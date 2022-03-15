@@ -98,7 +98,7 @@ def get_jwt_access_token(address, private_key):
       "query": "mutation CreateAccessTokenWithSignature($input: SignatureInput!) {    createAccessTokenWithSignature(input: $input) {      newAccount      result      accessToken      __typename    }  }  "
   }
 
-  response = requests.post("https://axieinfinity.com/graphql-server-v2/graphql", headers=headers, json=payload)
+  response = requests.post("https://graphql-gateway.axieinfinity.com/graphql", headers=headers, json=payload)
   if (response.status_code != 200):
     print(response.text)
   assert(response.status_code == 200)
@@ -111,7 +111,7 @@ def create_random_message():
         "query": "mutation CreateRandomMessage {    createRandomMessage  }  "
     }
 
-  response = requests.post("https://axieinfinity.com/graphql-server-v2/graphql", headers=headers, json=payload)
+  response = requests.post("https://graphql-gateway.axieinfinity.com/graphql", headers=headers, json=payload)
   if (response.status_code != 200):
     print(response.text)
   assert(response.status_code == 200)
