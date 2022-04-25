@@ -34,6 +34,14 @@ def wait(seconds):
     log(".", end="")
   log()
 
+def ask_yesno() -> bool:
+  while True:
+    input_str = input().lower()
+    if input_str in ('y', 'yes'):
+      return True
+    elif input_str in ('n', 'no'):
+      return False
+
 today = datetime.now()
 log_path = f"logs/logs-{today.year}-{today.month:02}-{today.day:02}.txt"
 
@@ -93,7 +101,7 @@ if (len(slp_claims) > 0):
   log("Would you like to claim SLP?", end=" ")
 
 while (len(slp_claims) > 0):
-  if (input() == "y"):
+  if ask_yesno():
     for slp_claim in slp_claims:
       log(f"   Claiming {slp_claim.slp_unclaimed_balance} SLP for '{slp_claim.name}'...", end="")
       try:
@@ -188,7 +196,7 @@ log("Would you like to execute payouts (y/n) ?", end=" ")
 
 # Execute payouts
 while (len(payouts) > 0):
-  if (input() != "y"):
+  if not ask_yesno():
     break
 
   log("Executing payouts...")
