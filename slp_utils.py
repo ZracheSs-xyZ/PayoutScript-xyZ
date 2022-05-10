@@ -8,7 +8,7 @@ headers = {
   "Content-Type": "application/json",
   "User-Agent": USER_AGENT }
 
-web3 = Web3(Web3.HTTPProvider('https://proxy.roninchain.com/free-gas-rpc', request_kwargs={ "headers": headers }))
+web3 = Web3(Web3.HTTPProvider('https://api.roninchain.com/rpc', request_kwargs={ "headers": headers }))
 web3_2 = Web3(Web3.HTTPProvider('https://api.roninchain.com/rpc', request_kwargs={ "headers": headers }))
 
 with open('slp_abi.json') as f:
@@ -55,7 +55,7 @@ def execute_slp_claim(claim, nonce):
     claim.state["amount"] = result["amount"]
     claim.state["timestamp"] = result["timestamp"]
 
-  claim_txn = slp_contract.functions.checkpoint(claim.address, claim.state["amount"], claim.state["timestamp"], claim.state["signature"]).buildTransaction({'gas': 1000000, 'gasPrice': 0, 'nonce': nonce})
+  claim_txn = slp_contract.functions.checkpoint(claim.address, claim.state["amount"], claim.state["timestamp"], claim.state["signature"]).buildTransaction({'gas': 1000000, 'gasPrice': web3.toWei(1, 'gwei'), 'nonce': nonce})
 
   signed_txn = web3.eth.account.sign_transaction(claim_txn, private_key = bytearray.fromhex(claim.private_key.replace("0x", "")))
   web3.eth.send_raw_transaction(signed_txn.rawTransaction)
