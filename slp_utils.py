@@ -21,7 +21,7 @@ def get_claimed_slp(address):
 
 def get_unclaimed_slp(address):
   for _ in range(3):
-    response = requests.get(f"https://game-api.skymavis.com/game-api/clients/{address}/items/1", headers=headers, data="")
+    response = requests.get(f"https://game-api-pre.skymavis.com/v1/players/{address}/items/1", headers=headers, data="")
     if (response.status_code == 200):
       break
     else:
@@ -32,8 +32,8 @@ def get_unclaimed_slp(address):
   assert(response.status_code == 200)
   result = response.json()
   
-  total = int(result["total"]) - int(result["claimable_total"])
-  last_claimed_item_at = datetime.utcfromtimestamp(int(result["last_claimed_item_at"]))
+  total = int(result["total"]) - int(result["claimableTotal"])
+  last_claimed_item_at = datetime.utcfromtimestamp(int(result["lastClaimedItemAt"]))
 
   if (datetime.utcnow() + timedelta(days=-14) < last_claimed_item_at):
     total = 0
@@ -45,11 +45,11 @@ def execute_slp_claim(claim, nonce):
     access_token = get_jwt_access_token(claim.address, claim.private_key)  
     custom_headers = headers.copy()
     custom_headers["authorization"] = f"Bearer {access_token}"
-    response = requests.post(f"https://game-api.skymavis.com/game-api/clients/{claim.address}/items/1/claim", headers=custom_headers, json="")
+    response = requests.post(f"https://game-api-pre.skymavis.com/v1/players/me/items/1/claim", headers=custom_headers)
     if (response.status_code != 200):
       print(response.text)
     assert(response.status_code == 200)
-    result = response.json()["blockchain_related"]["signature"]
+    result = response.json()["blockchainRelated"]["signature"]
     
     claim.state["signature"] = result["signature"].replace("0x", "")
     claim.state["amount"] = result["amount"]
