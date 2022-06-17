@@ -1,6 +1,6 @@
 # PayoutScript-xyZ
 - This script will make all the payouts for your Axie Infinity academy!
-
+- Created originally by ZracheSs | xyZ Github: https://github.com/ZracheSs-xyZ
 
 # Setup
 - Windows : https://medium.com/@ZracheSs-xyZ/payoutscript-xyz-step-by-step-installation-instructions-239a9fd9c424
