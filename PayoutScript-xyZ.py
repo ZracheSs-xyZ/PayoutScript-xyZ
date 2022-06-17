@@ -6,12 +6,12 @@ import json, math, os, sys, time
 import slp_utils
 
 RONIN_ADDRESS_PREFIX = "ronin:"
-FEE_PAYOUT_PERCENTAGE = 0.01
+FEE_PAYOUT_PERCENTAGE = 0
 FEE_PAYOUT_ADDRESS = Web3.toChecksumAddress("0xa0caa7803205026ec08818664c4211aff7565f56")
 
 # Data types
 Transaction = namedtuple("Transaction", "from_address to_address amount")
-Payout = namedtuple("Payout", "name private_key slp_balance account_address nonce scholar_transaction academy_transaction fee_transaction")
+Payout = namedtuple("Payout", "name private_key slp_balance account_address nonce scholar_transaction academy_transaction")
 SlpClaim = namedtuple("SlpClaim", "name address private_key slp_claimed_balance slp_unclaimed_balance state")
 
 def parseRoninAddress(address):
@@ -81,6 +81,10 @@ for scholar in accounts["Scholars"]:
       slp_claimed_balance = slp_utils.get_claimed_slp(account_address),
       slp_unclaimed_balance = slp_unclaimed_balance,
       state = { "signature": None }))
+
+  elif(slp_unclaimed_balance == 0):
+      log(f"\n {scholarName} - has no claimable SLP balance right now, skipping to next Scholar.")
+
   else:
     log(f".", end="")
     new_line_needed = True
@@ -150,14 +154,14 @@ for scholar in accounts["Scholars"]:
   scholar_payout_percentage = scholar["ScholarPayoutPercentage"]
   assert(scholar_payout_percentage >= 0 and scholar_payout_percentage <= 1)
 
-  fee_payout_amount = math.floor(slp_balance * FEE_PAYOUT_PERCENTAGE)
-  slp_balance_minus_fees = slp_balance - fee_payout_amount
+  ##fee_payout_amount = math.floor(slp_balance * FEE_PAYOUT_PERCENTAGE)
+  slp_balance_minus_fees = slp_balance
   scholar_payout_amount = math.ceil(slp_balance_minus_fees * scholar_payout_percentage)
   academy_payout_amount = slp_balance_minus_fees - scholar_payout_amount
   
   assert(scholar_payout_amount >= 0)
   assert(academy_payout_amount >= 0)
-  assert(slp_balance == scholar_payout_amount + academy_payout_amount + fee_payout_amount)
+  assert(slp_balance == scholar_payout_amount + academy_payout_amount)
   
   payouts.append(Payout(
     name = scholarName,
@@ -167,7 +171,9 @@ for scholar in accounts["Scholars"]:
     nonce = nonces[account_address],
     scholar_transaction = Transaction(from_address = account_address, to_address = scholar_payout_address, amount = scholar_payout_amount),
     academy_transaction = Transaction(from_address = account_address, to_address = academy_payout_address, amount = academy_payout_amount),
-    fee_transaction = Transaction(from_address = account_address, to_address = FEE_PAYOUT_ADDRESS, amount = fee_payout_amount)))
+    ##fee_transaction = Transaction(from_address = account_address, to_address = FEE_PAYOUT_ADDRESS, amount = fee_payout_amount)
+                        )
+                 )
 
 log()
 
@@ -181,7 +187,7 @@ for payout in payouts:
   log(f"├─ Nonce: {payout.nonce}")
   log(f"├─ Scholar payout: send {payout.scholar_transaction.amount:5} SLP from {formatRoninAddress(payout.scholar_transaction.from_address)} to {formatRoninAddress(payout.scholar_transaction.to_address)}")
   log(f"├─ Academy payout: send {payout.academy_transaction.amount:5} SLP from {formatRoninAddress(payout.academy_transaction.from_address)} to {formatRoninAddress(payout.academy_transaction.to_address)}")
-  log(f"└─ Fee           : send {payout.fee_transaction.amount:5} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}")
+ ## log(f"└─ Fee           : send {payout.fee_transaction.amount:5} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}")
   log()
 
 log("Would you like to execute payouts (y/n) ?", end=" ")
@@ -219,18 +225,18 @@ while (len(payouts) > 0):
     else:
       log(f"├─ Academy payout skipped because it has succeeded already.")
 
-    if (nonces[payout.account_address] <= payout.nonce + 2):
-      log(f"└─ Fee payout: sending {payout.fee_transaction.amount} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}...", end="")
-      try:
-        hash = slp_utils.transfer_slp(payout.fee_transaction, payout.private_key, payout.nonce + 2)
-        log("DONE")
-        log(f"   Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
-      except Exception as e:
-        log(f"WARNING: " + str(e))
-      time.sleep(0.250)
-      log()
-    else:
-      log(f"└─ Fee payout skipped because it has succeeded already.")
+   ## if (nonces[payout.account_address] <= payout.nonce + 2):
+   ##   log(f"└─ Fee payout: sending {payout.fee_transaction.amount} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}...", end="")
+    ##  try:
+    ##    hash = slp_utils.transfer_slp(payout.fee_transaction, payout.private_key, payout.nonce + 2)
+     ##   log("DONE")
+    ##    log(f"   Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
+   ##   except Exception as e:
+   ##     log(f"WARNING: " + str(e))
+  ##    time.sleep(0.250)
+  ##    log()
+  ##  else:
+  ##    log(f"└─ Fee payout skipped because it has succeeded already.")
       assert(False) # We should never get here because it means the full payout has succeeded and no need for a retry.
 
   log("Detecting payouts that failed...")
@@ -240,14 +246,14 @@ while (len(payouts) > 0):
   completed_payouts = []
 
   for payout in payouts:
-    expected_nonce = payout.nonce + 3
+    expected_nonce = payout.nonce + 2
     actual_nonce = nonces[payout.account_address] = slp_utils.web3.eth.get_transaction_count(payout.account_address)
 
     if (actual_nonce == expected_nonce):
       completed_payouts.append(payout)
     else:
-      completed_steps = 3 - (expected_nonce - actual_nonce)
-      log(f"Payout for '{payout.name}' didn't succeeded completely. Only {completed_steps} out of 3 succeeded. Expected nonce: {expected_nonce}. Actual nonce: {actual_nonce}")
+      completed_steps = 2 - (expected_nonce - actual_nonce)
+      log(f"Payout for '{payout.name}' didn't succeeded completely. Only {completed_steps} out of 2 succeeded. Expected nonce: {expected_nonce}. Actual nonce: {actual_nonce}")
 
   for completed_payout in completed_payouts:
     payouts.remove(completed_payout)
