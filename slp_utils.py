@@ -21,7 +21,7 @@ def get_claimed_slp(address):
 
 def get_unclaimed_slp(address):
   for _ in range(3):
-    response = requests.get(f"https://game-api.skymavis.com/game-api/clients/{address}/items/1", headers=headers, data="")
+    response = requests.get(f"https://game-api-pre.skymavis.com/v1/players/{address}/items/1", headers=headers, data="")
     if (response.status_code == 200):
       break
     else:
@@ -32,8 +32,8 @@ def get_unclaimed_slp(address):
   assert(response.status_code == 200)
   result = response.json()
   
-  total = int(result["total"]) - int(result["claimable_total"])
-  last_claimed_item_at = datetime.utcfromtimestamp(int(result["last_claimed_item_at"]))
+  total = int(result["rawTotal"]) - int(result["rawClaimableTotal"])
+  last_claimed_item_at = datetime.utcfromtimestamp(int(result["lastClaimedItemAt"]))
 
   if (datetime.utcnow() + timedelta(days=-14) < last_claimed_item_at):
     total = 0
@@ -55,7 +55,7 @@ def execute_slp_claim(claim, nonce):
     claim.state["amount"] = result["amount"]
     claim.state["timestamp"] = result["timestamp"]
 
-  claim_txn = slp_contract.functions.checkpoint(claim.address, claim.state["amount"], claim.state["timestamp"], claim.state["signature"]).buildTransaction({'gas': 1000000, 'gasPrice': web3.toWei(1, 'gwei'), 'nonce': nonce})
+  claim_txn = slp_contract.functions.checkpoint(claim.address, claim.state["amount"], claim.state["timestamp"], claim.state["signature"]).buildTransaction({'gas': 1000000, 'gasPrice': web3.toWei('1', 'gwei'), 'nonce': nonce})
 
   signed_txn = web3.eth.account.sign_transaction(claim_txn, private_key = bytearray.fromhex(claim.private_key.replace("0x", "")))
   web3.eth.send_raw_transaction(signed_txn.rawTransaction)
@@ -67,7 +67,7 @@ def transfer_slp(transaction, private_key, nonce):
     transaction.to_address,
     transaction.amount).buildTransaction({
       'chainId': 2020,
-      'gas': 1000000,
+      'gas': 100000,
       'gasPrice': web3.toWei('1', 'gwei'),
       'nonce': nonce,
     })
