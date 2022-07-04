@@ -4,6 +4,8 @@ from web3 import Web3
 import json, math, os, sys, time
 
 import slp_utils
+import config_protection as cfgp
+
 
 RONIN_ADDRESS_PREFIX = "ronin:"
 FEE_PAYOUT_PERCENTAGE = 0.01
@@ -43,17 +45,13 @@ log_file = open(log_path, "a", encoding="utf-8")
 original_stdout = sys.stdout
 
 log(f"*** Welcome to the SLP Payout program *** ({today})")
-
-# Load accounts data.
-if (len(sys.argv) != 2):
-  log("Please specify the path to the json config file as parameter.")
-  exit()
+if len(sys.argv) > 1:  # if a path is specified, will assume this is not an encrypted file
+  with open(sys.argv[1]) as f:
+      accounts = json.load(f)
+else:  # read the encrypted config
+  accounts = cfgp.get_config()
 
 nonces = {}
-
-with open(sys.argv[1]) as f:
-  accounts = json.load(f)
-
 academy_payout_address = parseRoninAddress(accounts["AcademyPayoutAddress"])
 
 # Check for unclaimed SLP
@@ -195,36 +193,39 @@ while (len(payouts) > 0):
 
   for payout in payouts:
     log(f"Executing payout for '{payout.name}'")
-    if (nonces[payout.account_address] == payout.nonce):
+    if nonces[payout.account_address] == payout.nonce:
       log(f"├─ Scholar payout: sending {payout.scholar_transaction.amount} SLP from {formatRoninAddress(payout.scholar_transaction.from_address)} to {formatRoninAddress(payout.scholar_transaction.to_address)}...", end="")
       try:
         hash = slp_utils.transfer_slp(payout.scholar_transaction, payout.private_key, payout.nonce)
         log("DONE")
-        log(f"│  Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
+        log(f"│  Hash: {hash}")
+        log(f"│  Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
       except Exception as e:
         log(f"WARNING: " + str(e))
       time.sleep(0.250)
     else:
       log(f"├─ Scholar payout skipped because it has succeeded already.")
 
-    if (nonces[payout.account_address] <= payout.nonce + 1):
+    if nonces[payout.account_address] <= (payout.nonce + 1):
       log(f"├─ Academy payout: sending {payout.academy_transaction.amount} SLP from {formatRoninAddress(payout.academy_transaction.from_address)} to {formatRoninAddress(payout.academy_transaction.to_address)}...", end="")
       try:
         hash = slp_utils.transfer_slp(payout.academy_transaction, payout.private_key, payout.nonce + 1)
         log("DONE")
-        log(f"│  Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
+        log(f"│  Hash: {hash}")
+        log(f"│  Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
       except Exception as e:
         log(f"WARNING: " + str(e))
       time.sleep(0.250)
     else:
       log(f"├─ Academy payout skipped because it has succeeded already.")
 
-    if (nonces[payout.account_address] <= payout.nonce + 2):
+    if nonces[payout.account_address] <= (payout.nonce + 2):
       log(f"└─ Fee payout: sending {payout.fee_transaction.amount} SLP from {formatRoninAddress(payout.fee_transaction.from_address)} to {formatRoninAddress(payout.fee_transaction.to_address)}...", end="")
       try:
         hash = slp_utils.transfer_slp(payout.fee_transaction, payout.private_key, payout.nonce + 2)
         log("DONE")
-        log(f"   Hash: {hash} - Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
+        log(f"│  Hash: {hash}")
+        log(f"│  Explorer: https://explorer.roninchain.com/tx/{str(hash)}")
       except Exception as e:
         log(f"WARNING: " + str(e))
       time.sleep(0.250)
